@@ -38,7 +38,9 @@
   bell.addEventListener('click',function(e){e.stopPropagation();var o=bpop.hidden;bpop.hidden=!o;bell.setAttribute('aria-expanded',String(o))});
   document.addEventListener('click',function(e){if(!bpop.hidden&&!(e.target.closest&&e.target.closest('.bellw'))){bpop.hidden=true;bell.setAttribute('aria-expanded','false')}});
  }
- function getJSON(u){return fetch(u).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
+ function getJSON(u){return fetch(u).then(function(r){if(r.ok)return r.json();return r.json().catch(function(){return {}}).then(function(j){var e=(j&&j.error)||{},rs=e.errors&&e.errors[0]&&e.errors[0].reason;throw new Error('HTTP '+r.status+(rs?' '+rs:'')+(e.message?' - '+e.message:''))})})}
+ var DBG=/[?&]wsmdebug/.test(location.search);
+ function dbg(m){if(!DBG)return;var d=document.getElementById('wsmdbg');if(!d){d=document.createElement('div');d.id='wsmdbg';d.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9999;max-width:90vw;padding:8px 12px;background:#111;color:#fff;font:12px/1.5 sans-serif;border-radius:8px;white-space:pre-wrap';document.body.appendChild(d)}d.textContent='[配信カードの診断]\n'+m}
  function lsGet(k){try{var o=JSON.parse(localStorage.getItem(k)||'null');return o&&Date.now()-o.t<TTL?o.v:null}catch(e){return null}}
  function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify({t:Date.now(),v:v}))}catch(e){}}
  function ttl(u){
@@ -85,8 +87,12 @@
   list.forEach(function(x){if(!x.stream||have[x.id]||x.own||x.unl||(R.qv||[]).indexOf(hs(x.id))>=0)return;R.items.push({t:x.t,u:'https://www.youtube.com/watch?v='+x.id,th:x.th,s:x.s,e:x.e,st:'auto',api:x.st})});
  }
  function poll(R){
-  if(R.pv||!R.k)return;
-  fetchYt(R).then(function(l){apply(R,l);render(R);bellUpd()}).catch(function(e){if(window.console)console.warn('YouTubeの自動取得に失敗しました。APIキーとチャンネルIDを確認してください。',e&&e.message)});
+  if(R.pv)return;
+  if(!R.k){dbg('APIキーが設定されていません');return}
+  fetchYt(R).then(function(l){apply(R,l);render(R);bellUpd();
+   var un=l.filter(function(x){return x.unl}).length,sm=l.filter(function(x){return x.stream}).length,lv=l.filter(function(x){return x.st==='live'&&x.stream&&!x.unl}).length;
+   dbg('YouTube取得OK('+new Date().toLocaleTimeString()+')\n取得した動画: '+l.length+'件 / うち配信: '+sm+'件 / 配信中: '+lv+'件 / 限定公開・非公開(非表示): '+un+'件\n画面に出ている枠: '+R.items.filter(function(i){return !i.hide}).length+'件'+(R.ch?'':'\n※チャンネルIDが未設定のため、登録した枠のURLだけを確認しています'))
+  }).catch(function(e){dbg('YouTube取得エラー: '+(e&&e.message));if(window.console)console.warn('YouTubeの自動取得に失敗しました。APIキーとチャンネルIDを確認してください。',e&&e.message)});
  }
  [].slice.call(document.querySelectorAll('.strmroot')).forEach(function(el){
   var R;try{R=JSON.parse(el.getAttribute('data-cfg'))}catch(e){return}
