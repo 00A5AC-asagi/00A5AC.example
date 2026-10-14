@@ -39,8 +39,8 @@
   document.addEventListener('click',function(e){if(!bpop.hidden&&!(e.target.closest&&e.target.closest('.bellw'))){bpop.hidden=true;bell.setAttribute('aria-expanded','false')}});
  }
  function getJSON(u){return fetch(u).then(function(r){if(r.ok)return r.json();return r.json().catch(function(){return {}}).then(function(j){var e=(j&&j.error)||{},rs=e.errors&&e.errors[0]&&e.errors[0].reason;throw new Error('HTTP '+r.status+(rs?' '+rs:'')+(e.message?' - '+e.message:''))})})}
- var DBG=/[?&]wsmdebug/.test(location.search);
- function dbg(m){if(!DBG)return;var d=document.getElementById('wsmdbg');if(!d){d=document.createElement('div');d.id='wsmdbg';d.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9999;max-width:90vw;padding:8px 12px;background:#111;color:#fff;font:12px/1.5 sans-serif;border-radius:8px;white-space:pre-wrap';document.body.appendChild(d)}d.textContent='[配信カードの診断]\n'+m}
+ var DBG=/[?&]wsmdebug/.test(location.search); var DK='';
+ function dbg(m){if(!DBG)return;var d=document.getElementById('wsmdbg');if(!d){d=document.createElement('div');d.id='wsmdbg';d.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9999;max-width:90vw;padding:8px 12px;background:#111;color:#fff;font:12px/1.5 sans-serif;border-radius:8px;white-space:pre-wrap';document.body.appendChild(d)}d.textContent='[配信カードの診断]\n使用中のAPIキー末尾: '+(DK||'-')+'\n'+m}
  function lsGet(k){try{var o=JSON.parse(localStorage.getItem(k)||'null');return o&&Date.now()-o.t<TTL?o.v:null}catch(e){return null}}
  function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify({t:Date.now(),v:v}))}catch(e){}}
  function ttl(u){
@@ -88,6 +88,7 @@
  }
  function poll(R){
   if(R.pv)return;
+  DK=R.k?R.k.slice(-4):'なし';
   if(!R.k){dbg('APIキーが設定されていません');return}
   fetchYt(R).then(function(l){apply(R,l);render(R);bellUpd();
    var un=l.filter(function(x){return x.unl}).length,sm=l.filter(function(x){return x.stream}).length,lv=l.filter(function(x){return x.st==='live'&&x.stream&&!x.unl}).length;
